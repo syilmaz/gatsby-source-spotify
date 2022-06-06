@@ -6,6 +6,7 @@ import { RecentResponse } from './types/spotify-recent';
 import { TokenResponse } from './types/spotify-token';
 import { Artist, TopArtistsResponse } from './types/spotify-top-artists';
 import { TopTracksResponse, Track } from './types/spotify-top-tracks';
+import { ArtistAlbumsResponse } from './types/spotify-artist-ablums';
 
 export type Scope =
   | 'playlist-read-private'
@@ -145,6 +146,7 @@ export const getUserData = async ({
   timeRanges = ['short_term', 'medium_term', 'long_term'],
   fetchPlaylists = true,
   fetchRecent = true,
+  fetchArtistAlbum = false,
 }: PluginOptions) => {
   const { access_token } = await getTokens(
     clientId,
@@ -155,6 +157,7 @@ export const getUserData = async ({
 
   const playlists = fetchPlaylists ? await getPlaylists(access_token) : [];
   const recentTracks = fetchRecent ? await getRecentTracks(access_token) : [];
+  const artistAlbums = fetchArtistAlbum ? await getArtistAlbums(access_token, fetchArtistAlbum) : [];
 
   const artists = await Promise.all(
     timeRanges.map(async t => {
@@ -170,10 +173,43 @@ export const getUserData = async ({
     }),
   );
 
+
+
   return {
     playlists,
     recentTracks,
     artists: [].concat(...artists) as (Artist & { time_range: TimeRange })[],
     tracks: [].concat(...tracks) as (Track & { time_range: TimeRange })[],
+    artistAlbums
   };
 };
+
+
+export const getArtistAlbums = async (
+  accessToken: string,
+  artistId: string,
+  limit: number = 20,
+  offset: number = 0,
+) => {
+  const url = new URL(`${SPOTIFY_API_URL}/artists/${artistId}/albums`);
+  url.searchParams.append('limit', String(Math.min(limit, 50)));
+  url.searchParams.append('offset', String(Math.min(offset, 50)));
+
+  const response = await fetch(String(url), {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `[${url} / ${accessToken}] ${
+        response.statusText
+      }: ${await response.text()}`,
+    );
+  }
+
+  const result: ArtistAlbumsResponse = await response.json();
+  return result.items;
+};
+

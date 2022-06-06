@@ -15,6 +15,7 @@ export interface PluginOptions {
   timeRanges?: TimeRange[];
   fetchPlaylists?: boolean;
   fetchRecent?: boolean;
+  fetchArtistAlbum?: string | false;
 }
 
 const referenceRemoteFile = async (
@@ -68,11 +69,12 @@ export const sourceNodes = async (
   const TopTrackNode = createNodeFactory('TopTrack');
   const PlaylistNode = createNodeFactory('Playlist');
   const RecentTrackNode = createNodeFactory('RecentTrack');
+  const ArtistAlbumNode = createNodeFactory('ArtistAlbum');
 
   const { createNode, touchNode } = actions;
   const helpers = { cache, createNode, createNodeId, store, touchNode };
 
-  const { tracks, artists, playlists, recentTracks } = await getUserData(
+  const { tracks, artists, playlists, recentTracks, artistAlbums } = await getUserData(
     pluginOptions,
   );
 
@@ -148,6 +150,22 @@ export const sourceNodes = async (
                   )
                 : null,
           },
+        }),
+      );
+    }),
+    ...artistAlbums.map(async (album, index) => {
+      createNode(
+        ArtistAlbumNode({
+          ...album,
+          order: index,
+          image:
+            album.images && album.images.length
+              ? await referenceRemoteFile(
+                  album.uri,
+                  album.images[0].url,
+                  helpers,
+                )
+              : null,
         }),
       );
     }),

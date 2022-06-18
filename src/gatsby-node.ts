@@ -21,15 +21,8 @@ export interface PluginOptions {
 const referenceRemoteFile = async (
   id: string,
   url: string,
-  { cache, createNode, createNodeId, touchNode, store },
+  { cache, createNode, createNodeId, touchNode, store }
 ) => {
-  const cachedResult = await cache.get(url);
-
-  if (cachedResult) {
-    touchNode({ nodeId: cachedResult });
-    return { localFile___NODE: cachedResult };
-  }
-
   const testRes = await fetch(url);
 
   if (!testRes.ok) {
@@ -163,7 +156,7 @@ export const sourceNodes = async (
               ? await referenceRemoteFile(
                   album.uri,
                   album.images[0].url,
-                  helpers,
+                  helpers
                 )
               : null,
         }),
